@@ -63,6 +63,10 @@ class RecordsDeleteRequest(BaseModel):
     user_id: str
     filename: Optional[str] = None
 
+class GenericRequest(BaseModel):
+    query: str
+    user_id: Optional[str] = None
+
 # --- API Endpoints ---
 @app.get("/")
 def read_root():
@@ -85,6 +89,22 @@ def analyze_symptoms(request: SymptomRequest):
         return result
     except Exception as e:
         # Catch any unexpected errors (API timeouts, etc.)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/generic-analyze")
+def generic_analyze(request: GenericRequest):
+    """
+    Handles simple/common medical queries using a web search ReAct agent.
+    Returns a formatted prescription without knowledge graphs or DDx.
+    """
+    if not request.query.strip():
+        raise HTTPException(status_code=400, detail="Query string cannot be empty.")
+    
+    try:
+        from curo_logic import process_generic_query
+        result = process_generic_query(request.query, request.user_id)
+        return result
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/chat")
