@@ -521,7 +521,7 @@ export default function ChatInterface() {
     <div className="flex flex-col h-screen bg-curo-bg overflow-hidden relative">
       {/* Header */}
       <header className="flex-shrink-0 z-20 glass-card-strong border-t-0 border-x-0 rounded-none h-14 flex items-center justify-between px-4 sm:px-8">
-         <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.location.reload()}>
+         <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => router.push('/')}>
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-curo-accent to-curo-teal flex items-center justify-center">
               <Activity size={16} className="text-white" />
             </div>

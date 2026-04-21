@@ -169,13 +169,4 @@
   );
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .logoloop__track {
-    transform: translate3d(0, 0, 0) !important;
-  }
 
-  .logoloop__item img,
-  .logoloop__node {
-    transition: none !important;
-  }
-}
