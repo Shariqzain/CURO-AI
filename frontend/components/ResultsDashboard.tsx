@@ -51,6 +51,7 @@ interface ResultsDashboardProps {
   onBack: () => void;
   onNodeClick?: (label: string) => void;
   isHistoryView?: boolean;
+  hideChat?: boolean;
 }
 
 /* ── Typewriter hook ────────────────────── */
@@ -233,7 +234,7 @@ function getNodeSize(label: string, winningDiagnosis: string) {
 /* ════════════════════════════════════════════
    MAIN COMPONENT
    ════════════════════════════════════════════ */
-export default function ResultsDashboard({ result, sessionId, initialMessages, userQuery, userId, isHistoryView, onBack, onNodeClick }: ResultsDashboardProps) {
+export default function ResultsDashboard({ result, sessionId, initialMessages, userQuery, userId, isHistoryView, hideChat, onBack, onNodeClick }: ResultsDashboardProps) {
   const { displayed, done, skipToEnd } = useTypewriter(result.response, 1);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dims, setDims] = useState({ width: 0, height: 0 });
@@ -389,55 +390,59 @@ export default function ResultsDashboard({ result, sessionId, initialMessages, u
               </p>
             )}
 
-            {/* Follow-up Conversation */}
-            {messages.length > 0 && (
-              <div className="mt-8 space-y-6 pt-6 border-t border-curo-border">
-                {messages.map((m, idx) => (
-                  <div key={idx} className={`flex gap-4 ${m.role === 'user' ? 'justify-end' : ''}`}>
-                    {m.role === 'assistant' && (
-                      <div className="w-8 h-8 rounded-lg bg-curo-purple/20 flex items-center justify-center shrink-0">
-                        <Stethoscope size={14} className="text-curo-purple" />
+            {!hideChat && (
+              <>
+                {/* Follow-up Conversation */}
+                {messages.length > 0 && (
+                  <div className="mt-8 space-y-6 pt-6 border-t border-curo-border">
+                    {messages.map((m, idx) => (
+                      <div key={idx} className={`flex gap-4 ${m.role === 'user' ? 'justify-end' : ''}`}>
+                        {m.role === 'assistant' && (
+                          <div className="w-8 h-8 rounded-lg bg-curo-purple/20 flex items-center justify-center shrink-0">
+                            <Stethoscope size={14} className="text-curo-purple" />
+                          </div>
+                        )}
+                        <div className={`max-w-[85%] p-4 rounded-2xl text-sm leading-relaxed ${
+                          m.role === 'user' 
+                            ? 'bg-curo-accent/10 border border-curo-accent/20 text-curo-text' 
+                            : 'bg-white/[0.03] border border-curo-border text-curo-text/90'
+                        }`}>
+                          {m.content}
+                        </div>
+                      </div>
+                    ))}
+                    {chatLoading && (
+                      <div className="flex gap-4 animate-pulse">
+                        <div className="w-8 h-8 rounded-lg bg-curo-purple/20 flex items-center justify-center shrink-0">
+                          <div className="w-4 h-4 rounded-full bg-curo-purple/40 animate-bounce" />
+                        </div>
+                        <div className="h-12 w-2/3 bg-white/[0.02] rounded-2xl border border-curo-border" />
                       </div>
                     )}
-                    <div className={`max-w-[85%] p-4 rounded-2xl text-sm leading-relaxed ${
-                      m.role === 'user' 
-                        ? 'bg-curo-accent/10 border border-curo-accent/20 text-curo-text' 
-                        : 'bg-white/[0.03] border border-curo-border text-curo-text/90'
-                    }`}>
-                      {m.content}
-                    </div>
-                  </div>
-                ))}
-                {chatLoading && (
-                  <div className="flex gap-4 animate-pulse">
-                    <div className="w-8 h-8 rounded-lg bg-curo-purple/20 flex items-center justify-center shrink-0">
-                      <div className="w-4 h-4 rounded-full bg-curo-purple/40 animate-bounce" />
-                    </div>
-                    <div className="h-12 w-2/3 bg-white/[0.02] rounded-2xl border border-curo-border" />
+                    <div ref={chatEndRef} />
                   </div>
                 )}
-                <div ref={chatEndRef} />
-              </div>
-            )}
 
-            {/* Chat Input */}
-            <form onSubmit={handleSendMessage} className="mt-8 flex gap-3">
-              <input
-                type="text"
-                placeholder="Ask a clinical follow-up question..."
-                className="flex-1 curo-input text-sm px-4 h-11"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                disabled={chatLoading}
-              />
-              <button 
-                type="submit" 
-                disabled={chatLoading || !newMessage.trim()}
-                className="w-11 h-11 flex items-center justify-center rounded-xl bg-curo-accent/10 border border-curo-accent/30 text-curo-accent hover:bg-curo-accent/20 transition-all disabled:opacity-50"
-              >
-                {chatLoading ? <RefreshCw size={18} className="animate-spin" /> : <MessageSquare size={18} />}
-              </button>
-            </form>
+                {/* Chat Input */}
+                <form onSubmit={handleSendMessage} className="mt-8 flex gap-3">
+                  <input
+                    type="text"
+                    placeholder="Ask a clinical follow-up question..."
+                    className="flex-1 curo-input text-sm px-4 h-11"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    disabled={chatLoading}
+                  />
+                  <button 
+                    type="submit" 
+                    disabled={chatLoading || !newMessage.trim()}
+                    className="w-11 h-11 flex items-center justify-center rounded-xl bg-curo-accent/10 border border-curo-accent/30 text-curo-accent hover:bg-curo-accent/20 transition-all disabled:opacity-50"
+                  >
+                    {chatLoading ? <RefreshCw size={18} className="animate-spin" /> : <MessageSquare size={18} />}
+                  </button>
+                </form>
+              </>
+            )}
           </div>
         </div>
 

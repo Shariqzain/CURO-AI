@@ -1208,3 +1208,81 @@ def delete_health_records(user_id: str, filename: str = None) -> dict:
             
     except Exception as e:
         return {"error": str(e)}
+
+
+# ============================================================================
+# GENERIC MODE — Web Search ReAct Agent for Common Ailments
+# ============================================================================
+
+def process_generic_query(user_query: str, user_id: str = None) -> dict:
+    """
+    Handles generic/simple medical queries using DuckDuckGo web search
+    to gather context, and a single LLM pass to format a prescription.
+    """
+    from duckduckgo_search import DDGS
+    from langchain_core.prompts import PromptTemplate
+    from langchain_core.output_parsers import StrOutputParser
+
+    print(f"--- [GENERIC MODE] Deep Search Processing: {user_query} ---\n")
+
+    context = ""
+    sources = []
+    seen_urls = set()
+    
+    try:
+        with DDGS() as ddgs:
+            # Multi-query strategy for comprehensive context
+            results1 = list(ddgs.text(f"{user_query} clinical treatment and medication", max_results=5))
+            results2 = list(ddgs.text(f"{user_query} best home remedies natural", max_results=5))
+            
+            all_results = results1 + results2
+            
+            for r in all_results:
+                url = r.get('href')
+                if url and url not in seen_urls:
+                    seen_urls.add(url)
+                    title = r.get('title', 'N/A')
+                    snippet = r.get('body', 'N/A')
+                    context += f"Source: {title}\nSnippet: {snippet}\n\n"
+                    sources.append({
+                        "title": title,
+                        "url": url,
+                        "snippet": snippet[:150] + "..." if len(snippet) > 150 else snippet
+                    })
+    except Exception as e:
+        print(f"[!] DuckDuckGo Comprehensive Search failed: {e}")
+
+    prompt = PromptTemplate.from_template(
+        "You are Curo AI, a helpful and empathetic medical assistant. A user has a common health issue.\n\n"
+        "USER QUERY: {query}\n\n"
+        "WEB SEARCH CONTEXT (if any):\n{context}\n\n"
+        "Provide a helpful, empathetic response structure:\n"
+        "- **Quick Relief**: Immediate steps they can take right now\n"
+        "- **Recommended Medications**: OTC medications with proper dosage (if found in context)\n"
+        "- **Home Remedies**: Natural/home treatments\n"
+        "- **When to See a Doctor**: Red flags that require professional attention\n\n"
+        "IMPORTANT RULES:\n"
+        "1. Keep it concise, actionable, and empathetic.\n"
+        "2. Do NOT use markdown headers (##), use **bold text** for section labels.\n"
+        "3. Always include a disclaimer at the end that this is not professional medical advice."
+    )
+
+    try:
+        chain = prompt | llm | StrOutputParser()
+        response_text = chain.invoke({"query": user_query, "context": context})
+
+        print(f"[*] Generic mode response generated successfully.")
+
+        return {
+            "response": response_text,
+            "mode": "generic",
+            "sources": sources
+        }
+
+    except Exception as err:
+        print(f"[!] Generic agent LLM failed: {err}")
+        return {
+            "response": f"Sorry, I couldn't process your request right now. Error: {str(err)}",
+            "mode": "generic",
+            "sources": []
+        }
